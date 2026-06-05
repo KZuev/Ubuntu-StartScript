@@ -73,6 +73,16 @@ log_info "========================================================"
 require_ubuntu
 validate_config
 
+# Phase 1 installs packages (chrony, locales) — package lists must be fresh first
+phase "Phase 0: Package Lists"
+if ! is_done "apt_update"; then
+    log_info "Updating package lists"
+    apt-get update -q
+    mark_done "apt_update"
+else
+    log_info "Package lists: already updated, skipping"
+fi
+
 # ═════════════════════════════════════════════════════════════════════════════
 #  Phase 1 — System Identity
 # ═════════════════════════════════════════════════════════════════════════════

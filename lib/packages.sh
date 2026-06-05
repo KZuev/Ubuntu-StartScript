@@ -4,7 +4,8 @@
 apt_update_upgrade() {
     is_done "apt_upgrade" && { log_info "apt upgrade: already done, skipping"; return; }
 
-    log_info "Updating package lists"
+    # apt-get update already ran in Phase 0; run again here to pick up any
+    # new repos that may have been added (e.g. by optional packages)
     apt-get update -q
 
     log_info "Upgrading installed packages"
