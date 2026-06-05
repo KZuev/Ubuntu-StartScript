@@ -140,16 +140,23 @@ phase "Phase 6: Firewall"
 configure_ufw
 
 # ═════════════════════════════════════════════════════════════════════════════
-#  Phase 7 — Maintenance
+#  Phase 7 — SSL Certificate (Let's Encrypt)
+#  Runs after UFW so port 80 is open for HTTP challenge
 # ═════════════════════════════════════════════════════════════════════════════
-phase "Phase 7: Maintenance"
+phase "Phase 7: SSL Certificate"
+configure_certbot
+
+# ═════════════════════════════════════════════════════════════════════════════
+#  Phase 8 — Maintenance
+# ═════════════════════════════════════════════════════════════════════════════
+phase "Phase 8: Maintenance"
 configure_auto_updates
 cleanup_packages
 
 # ═════════════════════════════════════════════════════════════════════════════
-#  Phase 8 — Completion Report
+#  Phase 9 — Completion Report
 # ═════════════════════════════════════════════════════════════════════════════
-phase "Phase 8: Complete"
+phase "Phase 9: Complete"
 
 SERVER_IP=$(hostname -I | awk '{print $1}')
 SSH_PORT="${SETUP_SSH_PORT:-22}"
@@ -175,6 +182,10 @@ if [[ "${SETUP_CREATE_USER:-yes}" == "yes" ]]; then
 echo "  New user:     ${NEW_USER} (with sudo)"
 fi
 echo "  SSH port:     ${SSH_PORT}"
+if [[ -n "${SETUP_DOMAIN:-}" ]]; then
+echo "  Domain:       ${SETUP_DOMAIN}"
+echo "  Certificate:  /etc/letsencrypt/live/${SETUP_DOMAIN}/"
+fi
 echo ""
 echo "  Connect with:"
 echo "    ssh -p ${SSH_PORT} ${NEW_USER}@${SERVER_IP}"

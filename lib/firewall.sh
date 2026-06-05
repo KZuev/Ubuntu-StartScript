@@ -49,6 +49,14 @@ configure_ufw() {
         ufw allow "$port" comment "user-configured" > /dev/null
     done
 
+    # If a domain is configured for SSL, ports 80 and 443 must be open
+    # Port 80 is required for certbot HTTP challenge; 443 for HTTPS traffic
+    if [[ -n "${SETUP_DOMAIN:-}" ]]; then
+        log_info "Domain configured — opening ports 80 (HTTP) and 443 (HTTPS)"
+        ufw allow 80/tcp  comment "HTTP (certbot + web)"  > /dev/null
+        ufw allow 443/tcp comment "HTTPS"                 > /dev/null
+    fi
+
     # Enable logging
     ufw logging on > /dev/null
 
