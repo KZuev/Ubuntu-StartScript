@@ -41,7 +41,14 @@ configure_ssh() {
     fi
 
     log_info "sshd config test passed. Restarting sshd..."
-    systemctl restart sshd
+    # Ubuntu uses "ssh", RHEL/CentOS uses "sshd"
+    local ssh_svc
+    if systemctl list-units --full -all 2>/dev/null | grep -q "ssh.service"; then
+        ssh_svc="ssh"
+    else
+        ssh_svc="sshd"
+    fi
+    systemctl restart "$ssh_svc"
 
     mark_done "ssh_config"
     log_info "SSH hardened. Port: ${ssh_port}"
