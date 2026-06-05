@@ -48,7 +48,8 @@ setup_ntp() {
     log_info "Configuring NTP with chrony"
     apt_install chrony
     systemctl enable --now chrony
-    timedatectl set-ntp true
+    # chrony manages NTP directly; timedatectl set-ntp applies to systemd-timesyncd
+    # and fails when chrony is the NTP provider — so we skip it
 
     mark_done "ntp"
     log_info "NTP configured, time sync active"
