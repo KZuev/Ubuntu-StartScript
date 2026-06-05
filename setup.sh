@@ -72,6 +72,7 @@ log_info "========================================================"
 # ─── Validate config ──────────────────────────────────────────────────────────
 require_ubuntu
 validate_config
+prompt_user_password   # interactive password prompt before any changes
 
 # Phase 1 installs packages (chrony, locales) — package lists must be fresh first
 phase "Phase 0: Package Lists"
@@ -115,9 +116,13 @@ install_optional_packages
 #  This order ensures key access exists before password auth is disabled.
 # ═════════════════════════════════════════════════════════════════════════════
 phase "Phase 4: User Setup"
-create_user
-configure_user_shell
-install_ssh_key
+if [[ "${SETUP_CREATE_USER:-yes}" == "yes" ]]; then
+    create_user
+    configure_user_shell
+    install_ssh_key
+else
+    log_info "SETUP_CREATE_USER=no — skipping user setup"
+fi
 
 # ═════════════════════════════════════════════════════════════════════════════
 #  Phase 5 — Security Hardening
@@ -166,13 +171,10 @@ echo "║            SERVER SETUP COMPLETE                    ║"
 echo "╚══════════════════════════════════════════════════════╝"
 echo ""
 echo "  Hostname:     ${SETUP_HOSTNAME}"
+if [[ "${SETUP_CREATE_USER:-yes}" == "yes" ]]; then
 echo "  New user:     ${NEW_USER} (with sudo)"
-echo "  SSH port:     ${SSH_PORT}"
-if [[ -n "${GENERATED_PASSWORD:-}" ]]; then
-echo ""
-echo "  Password:     ${GENERATED_PASSWORD}"
-echo "  (auto-generated — save it now, it won't be shown again)"
 fi
+echo "  SSH port:     ${SSH_PORT}"
 echo ""
 echo "  Connect with:"
 echo "    ssh -p ${SSH_PORT} ${NEW_USER}@${SERVER_IP}"

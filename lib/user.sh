@@ -5,7 +5,6 @@ create_user() {
     is_done "create_user" && { log_info "user: already created, skipping"; return; }
 
     local username="${SETUP_NEW_USER}"
-    local password="${SETUP_NEW_USER_PASSWORD:-}"
 
     if id "$username" &>/dev/null; then
         log_info "User '${username}' already exists, skipping creation"
@@ -14,19 +13,9 @@ create_user() {
         adduser --disabled-password --gecos "" "$username"
     fi
 
-    # Set password — required for sudo to work
-    if [[ -n "$password" ]]; then
-        echo "${username}:${password}" | chpasswd
-        log_info "Password set for user '${username}'"
-    else
-        # Generate a random password so sudo works; print it in the final report
-        local gen_pass
-        gen_pass=$(tr -dc 'A-Za-z0-9@#%^&*' < /dev/urandom | head -c 20)
-        echo "${username}:${gen_pass}" | chpasswd
-        # Store for the completion report
-        GENERATED_PASSWORD="$gen_pass"
-        log_info "Random password generated for '${username}' (shown in final report)"
-    fi
+    # NEW_USER_PASSWORD is set by prompt_user_password() at startup — never from config
+    echo "${username}:${NEW_USER_PASSWORD}" | chpasswd
+    log_info "Password set for user '${username}'"
 
     # Add to sudo group
     usermod -aG sudo "$username"

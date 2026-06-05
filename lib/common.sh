@@ -79,12 +79,14 @@ validate_config() {
     fi
 
     # New user — must match Linux username rules (lowercase, no spaces)
-    if [[ -z "${SETUP_NEW_USER:-}" ]]; then
-        log_error "SETUP_NEW_USER is required"
-        (( errors++ )) || true
-    elif [[ ! "${SETUP_NEW_USER}" =~ ^[a-z_][a-z0-9_-]{0,31}$ ]]; then
-        log_error "SETUP_NEW_USER='${SETUP_NEW_USER}' is invalid. Use lowercase letters, digits, _ or - only (e.g. 'kirill')"
-        (( errors++ )) || true
+    if [[ "${SETUP_CREATE_USER:-yes}" == "yes" ]]; then
+        if [[ -z "${SETUP_NEW_USER:-}" ]]; then
+            log_error "SETUP_NEW_USER is required when SETUP_CREATE_USER=yes"
+            (( errors++ )) || true
+        elif [[ ! "${SETUP_NEW_USER}" =~ ^[a-z_][a-z0-9_-]{0,31}$ ]]; then
+            log_error "SETUP_NEW_USER='${SETUP_NEW_USER}' is invalid. Use lowercase letters, digits, _ or - only (e.g. 'kirill')"
+            (( errors++ )) || true
+        fi
     fi
 
     # SSH lockout prevention: disabling password auth without a key = lockout
@@ -120,6 +122,39 @@ validate_config() {
     fi
 
     log_info "Config validation passed"
+}
+
+# ---------------------------------------------------------------------------
+# Interactive password prompt — runs before any changes, password never
+# written to disk. Result stored in global NEW_USER_PASSWORD.
+# ---------------------------------------------------------------------------
+prompt_user_password() {
+    [[ "${SETUP_CREATE_USER:-yes}" != "yes" ]] && return
+
+    # Non-interactive mode: no terminal attached (e.g. piped input)
+    if [[ ! -t 0 ]]; then
+        log_error "SETUP_CREATE_USER=yes but no terminal available for password prompt."
+        log_error "Attach a terminal or set SETUP_CREATE_USER=no."
+        exit 1
+    fi
+
+    local pass1 pass2
+    echo ""
+    echo "  New user '${SETUP_NEW_USER}' requires a password for sudo."
+    while true; do
+        read -rsp "  Enter password for '${SETUP_NEW_USER}': " pass1; echo ""
+        if [[ ${#pass1} -lt 8 ]]; then
+            echo "  Password must be at least 8 characters. Try again."
+            continue
+        fi
+        read -rsp "  Confirm password: " pass2; echo ""
+        if [[ "$pass1" == "$pass2" ]]; then
+            NEW_USER_PASSWORD="$pass1"
+            echo ""
+            break
+        fi
+        echo "  Passwords do not match. Try again."
+    done
 }
 
 # ---------------------------------------------------------------------------
