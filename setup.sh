@@ -168,6 +168,11 @@ echo ""
 echo "  Hostname:     ${SETUP_HOSTNAME}"
 echo "  New user:     ${NEW_USER} (with sudo)"
 echo "  SSH port:     ${SSH_PORT}"
+if [[ -n "${GENERATED_PASSWORD:-}" ]]; then
+echo ""
+echo "  Password:     ${GENERATED_PASSWORD}"
+echo "  (auto-generated — save it now, it won't be shown again)"
+fi
 echo ""
 echo "  Connect with:"
 echo "    ssh -p ${SSH_PORT} ${NEW_USER}@${SERVER_IP}"
