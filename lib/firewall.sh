@@ -14,6 +14,14 @@ configure_ufw() {
         apt_install ufw
     fi
 
+    # Safety check: if SSH port was changed, verify it's listening before blocking port 22
+    local ssh_port="${SETUP_SSH_PORT:-22}"
+    if ! ss -tlnp | grep -q ":${ssh_port}[[:space:]]"; then
+        log_error "ABORT: SSH is not listening on port ${ssh_port}."
+        log_error "Enabling UFW now would lock you out. Fix SSH config first."
+        exit 1
+    fi
+
     log_info "Configuring UFW firewall"
 
     # Start from clean state

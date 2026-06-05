@@ -1,6 +1,22 @@
 #!/usr/bin/env bash
 # SSH hardening: sshd_config drop-in, service restart, fail2ban
 
+_detect_ssh_service() {
+    # Try active services first, then enabled — covers all Ubuntu/Debian variants
+    for svc in ssh sshd openssh-server; do
+        if systemctl is-active "${svc}.service" &>/dev/null; then
+            echo "$svc"; return
+        fi
+    done
+    for svc in ssh sshd openssh-server; do
+        if systemctl is-enabled "${svc}.service" &>/dev/null; then
+            echo "$svc"; return
+        fi
+    done
+    log_error "Cannot find SSH service (tried: ssh, sshd, openssh-server)"
+    exit 1
+}
+
 configure_ssh() {
     is_done "ssh_config" && { log_info "SSH config: already hardened, skipping"; return; }
 
@@ -41,14 +57,18 @@ configure_ssh() {
     fi
 
     log_info "sshd config test passed. Restarting sshd..."
-    # Ubuntu uses "ssh.service", RHEL/CentOS uses "sshd.service"
     local ssh_svc
-    if systemctl cat ssh.service &>/dev/null; then
-        ssh_svc="ssh"
-    else
-        ssh_svc="sshd"
-    fi
+    ssh_svc=$(_detect_ssh_service)
+    log_info "Detected SSH service name: ${ssh_svc}"
     systemctl restart "$ssh_svc"
+
+    # Verify SSH is actually listening on the new port after restart
+    sleep 1
+    if ! ss -tlnp | grep -q ":${ssh_port}[[:space:]]"; then
+        log_error "SSH is not listening on port ${ssh_port} after restart. Something went wrong."
+        exit 1
+    fi
+    log_info "SSH confirmed listening on port ${ssh_port}"
 
     mark_done "ssh_config"
     log_info "SSH hardened. Port: ${ssh_port}"
