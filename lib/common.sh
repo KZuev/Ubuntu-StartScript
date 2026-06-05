@@ -78,9 +78,12 @@ validate_config() {
         log_warn "SETUP_TIMEZONE '${SETUP_TIMEZONE}' may not be valid — proceeding anyway"
     fi
 
-    # New user
+    # New user — must match Linux username rules (lowercase, no spaces)
     if [[ -z "${SETUP_NEW_USER:-}" ]]; then
         log_error "SETUP_NEW_USER is required"
+        (( errors++ )) || true
+    elif [[ ! "${SETUP_NEW_USER}" =~ ^[a-z_][a-z0-9_-]{0,31}$ ]]; then
+        log_error "SETUP_NEW_USER='${SETUP_NEW_USER}' is invalid. Use lowercase letters, digits, _ or - only (e.g. 'kirill')"
         (( errors++ )) || true
     fi
 
