@@ -41,9 +41,9 @@ configure_ssh() {
     fi
 
     log_info "sshd config test passed. Restarting sshd..."
-    # Ubuntu uses "ssh", RHEL/CentOS uses "sshd"
+    # Ubuntu uses "ssh.service", RHEL/CentOS uses "sshd.service"
     local ssh_svc
-    if systemctl list-units --full -all 2>/dev/null | grep -q "ssh.service"; then
+    if systemctl cat ssh.service &>/dev/null; then
         ssh_svc="ssh"
     else
         ssh_svc="sshd"
