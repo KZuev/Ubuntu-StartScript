@@ -130,8 +130,9 @@ https://download.docker.com/linux/ubuntu ${codename} stable" \
 
     systemctl enable --now docker
 
-    # Add new user to docker group (no sudo needed for docker commands)
-    if [[ -n "${SETUP_NEW_USER:-}" ]]; then
+    # Add user to docker group only if the user already exists.
+    # If the user is created later (Phase 4), create_user() handles this.
+    if [[ -n "${SETUP_NEW_USER:-}" ]] && id "${SETUP_NEW_USER}" &>/dev/null; then
         usermod -aG docker "${SETUP_NEW_USER}"
         log_info "User ${SETUP_NEW_USER} added to docker group"
     fi

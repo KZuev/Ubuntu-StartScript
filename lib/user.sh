@@ -17,6 +17,12 @@ create_user() {
     usermod -aG sudo "$username"
     log_info "User '${username}' added to sudo group"
 
+    # Add to docker group if Docker was already installed in Phase 3
+    if command -v docker &>/dev/null; then
+        usermod -aG docker "$username"
+        log_info "User '${username}' added to docker group"
+    fi
+
     mark_done "create_user"
 }
 
